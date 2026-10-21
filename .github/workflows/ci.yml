@@ -1,0 +1,23 @@
+name: Service CI
+
+on:
+  push:
+    branches: [main, staging]
+  pull_request:
+    branches: [main, staging]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dockerize:
+    name: "Stage: Dockerize & Push"
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    uses: hoanganhnth23/delivery.devops.centralized-ci/.github/workflows/build-java.yml@main
+    with:
+      service_name: "match"
+      image_name: "match-service"
+      dockerfile: "./Dockerfile"
+      platform: "linux/amd64"
+    secrets: inherit

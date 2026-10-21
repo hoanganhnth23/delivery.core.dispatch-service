@@ -1,0 +1,2 @@
+ALTER TABLE dispatch_pool_items
+    ADD COLUMN IF NOT EXISTS wave_number INTEGER NOT NULL DEFAULT 0;

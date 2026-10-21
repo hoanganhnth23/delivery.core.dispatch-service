@@ -1,0 +1,13 @@
+/Users/a/Documents/private/delivery/backend_delivery/match/domain/src/main/java/com/delivery/match/domain/availability/NearbySearchPolicy.java
+/Users/a/Documents/private/delivery/backend_delivery/match/domain/src/main/java/com/delivery/match/domain/availability/ShipperProjectionPolicy.java
+/Users/a/Documents/private/delivery/backend_delivery/match/domain/src/main/java/com/delivery/match/domain/batch/BatchBundlePolicy.java
+/Users/a/Documents/private/delivery/backend_delivery/match/domain/src/main/java/com/delivery/match/domain/batch/BatchPoolPolicy.java
+/Users/a/Documents/private/delivery/backend_delivery/match/domain/src/main/java/com/delivery/match/domain/command/MatchCommandPolicy.java
+/Users/a/Documents/private/delivery/backend_delivery/match/domain/src/main/java/com/delivery/match/domain/dispatch/DispatchBundleCandidate.java
+/Users/a/Documents/private/delivery/backend_delivery/match/domain/src/main/java/com/delivery/match/domain/dispatch/DispatchOrderSnapshot.java
+/Users/a/Documents/private/delivery/backend_delivery/match/domain/src/main/java/com/delivery/match/domain/dispatch/DispatchShipperSnapshot.java
+/Users/a/Documents/private/delivery/backend_delivery/match/domain/src/main/java/com/delivery/match/domain/single/CandidatePolicy.java
+/Users/a/Documents/private/delivery/backend_delivery/match/domain/src/main/java/com/delivery/match/domain/single/FindCommand.java
+/Users/a/Documents/private/delivery/backend_delivery/match/domain/src/main/java/com/delivery/match/domain/single/RetryPolicy.java
+/Users/a/Documents/private/delivery/backend_delivery/match/domain/src/main/java/com/delivery/match/domain/single/SearchWindow.java
+/Users/a/Documents/private/delivery/backend_delivery/match/domain/src/main/java/com/delivery/match/domain/single/SingleOfferPolicy.java

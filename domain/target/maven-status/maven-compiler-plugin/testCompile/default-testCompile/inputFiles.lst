@@ -1,0 +1,7 @@
+/Users/a/Documents/private/delivery/backend_delivery/match/domain/src/test/java/com/delivery/match/domain/DispatchDomainInvariantTest.java
+/Users/a/Documents/private/delivery/backend_delivery/match/domain/src/test/java/com/delivery/match/domain/availability/NearbySearchPolicyTest.java
+/Users/a/Documents/private/delivery/backend_delivery/match/domain/src/test/java/com/delivery/match/domain/availability/ShipperProjectionPolicyTest.java
+/Users/a/Documents/private/delivery/backend_delivery/match/domain/src/test/java/com/delivery/match/domain/batch/BatchBundlePolicyTest.java
+/Users/a/Documents/private/delivery/backend_delivery/match/domain/src/test/java/com/delivery/match/domain/batch/BatchPoolPolicyTest.java
+/Users/a/Documents/private/delivery/backend_delivery/match/domain/src/test/java/com/delivery/match/domain/command/MatchCommandPolicyTest.java
+/Users/a/Documents/private/delivery/backend_delivery/match/domain/src/test/java/com/delivery/match/domain/single/SingleDispatchPolicyTest.java
