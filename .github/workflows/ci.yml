@@ -1,20 +1,19 @@
-name: "Deploy & Release"
+name: Service CI
 
 on:
   push:
-    branches:
-      - main
-      - staging
-    tags:
-      - 'v*.*.*'
+    branches: [main, staging]
+    tags: ['v*.*.*']
+  pull_request:
+    branches: [main, staging]
   workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
-  dockerize-and-deploy:
-    name: "Dockerize, Push GAR & Deploy GKE"
+  service-pipeline:
+    name: "Pipeline"
     uses: hoanganhnth23/delivery.devops.centralized-ci/.github/workflows/build-java.yml@main
     with:
       service_name: "dispatch"
