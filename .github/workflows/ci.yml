@@ -3,6 +3,7 @@ name: Service CI
 on:
   push:
     branches: [main, staging]
+    tags: ['v*.*.*']
   pull_request:
     branches: [main, staging]
   workflow_dispatch:
@@ -11,8 +12,16 @@ permissions:
   contents: read
 
 jobs:
+  quality-gate:
+    name: "Stage: Quality Gate (Lint, Test, Security)"
+    uses: hoanganhnth23/delivery.devops.centralized-ci/.github/workflows/quality-java.yml@main
+    with:
+      service_name: "match"
+    secrets: inherit
+
   dockerize:
     name: "Stage: Dockerize & Push"
+    needs: [quality-gate]
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     uses: hoanganhnth23/delivery.devops.centralized-ci/.github/workflows/build-java.yml@main
     with:
