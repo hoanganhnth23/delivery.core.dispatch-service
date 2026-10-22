@@ -1,0 +1,24 @@
+name: "Deploy & Release"
+
+on:
+  push:
+    branches:
+      - main
+      - staging
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dockerize-and-deploy:
+    name: "Dockerize, Push GAR & Deploy GKE"
+    uses: hoanganhnth23/delivery.devops.centralized-ci/.github/workflows/build-java.yml@main
+    with:
+      service_name: "dispatch"
+      image_name: "dispatch-service"
+      dockerfile: "./Dockerfile"
+      platform: "linux/amd64"
+    secrets: inherit
