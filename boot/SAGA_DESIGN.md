@@ -7,6 +7,11 @@
 
 ## Vai trò
 
+> 2026-10-24: code nằm ở `com.delivery.dispatch` (lớp chính `DispatchCoordinator`,
+> tách `DispatchInbox`, `DispatchCommandOutbox`, `MatchingCommands`, `OfferExpiry`,
+> `DispatchUseCases`). Tên DNS `saga-orchestrator-service`, topic `saga.command.*`
+> và bảng `saga_*` giữ nguyên làm hợp đồng với Order/Delivery/Match.
+
 Saga Orchestrator chạy cổng `8095`, persist state/step/outbox trong PostgreSQL và
 điều phối order bằng Kafka. Service không tạo order qua REST và không có public
 controller. Mọi command được ghi transactional outbox theo aggregate order trước
@@ -62,7 +67,7 @@ khi relay sang Kafka.
 
 ## Verification
 
-- Focused: listener validation/ACK, SagaManager transitions, outbox transaction,
+- Focused: listener validation/ACK, DispatchCoordinator transitions, outbox transaction,
   Flyway clean/legacy/fail-closed.
 - Runtime Gate B8: restaurant-confirm-before-match, one-shipper offer,
   reject/timeout/rematch, cancel before/after pickup, duplicate/crash/restart và
