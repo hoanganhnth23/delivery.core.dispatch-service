@@ -70,9 +70,10 @@ public final class DefaultAssignmentUseCase implements AssignmentUseCase {
             return RejectionOutcome.IGNORED_STATE;
         }
         CaseHistory history = dispatchCase.history();
-        long previousRejections = history.countWithPrefix("SHIPPER_REJECTED");
-        RematchPolicy.Decision decision = RematchPolicy.onRejection(
-                rejectedShipperId, history.rejectingShippers(), previousRejections);
+        long previousFailedOffers = history.countWithPrefix("SHIPPER_REJECTED")
+                + history.countWithPrefix("SHIPPER_OFFER_TIMEOUT");
+        RematchPolicy.Decision decision = RematchPolicy.onRejection(rejectedShipperId,
+                history.rejectingShippers(), history.recordedRejectedShippers(), previousFailedOffers);
         if (decision instanceof RematchPolicy.Duplicate) {
             return RejectionOutcome.DUPLICATE;
         }

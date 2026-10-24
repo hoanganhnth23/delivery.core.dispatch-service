@@ -6,10 +6,9 @@ import java.util.List;
 
 /**
  * Rematch decisions after a shipper rejects or ignores the single active offer.
- * Exclusion sources intentionally differ between the two paths to preserve the
- * legacy Saga behavior: rejection rematch excludes only previously rejecting
- * shippers, while offer-timeout rematch excludes every shipper recorded with a
- * rejectedShipperId in the case history (including earlier timeouts).
+ * Both paths exclude every shipper recorded with a rejectedShipperId in the case
+ * history (earlier rejections and offer timeouts) and share one failed-offer
+ * budget. Only an earlier rejection makes a new rejection a duplicate.
  */
 public final class RematchPolicy {
 
@@ -42,28 +41,27 @@ public final class RematchPolicy {
 
     /**
      * @param rejectedShipperId          shipper rejecting now; may be null for a legacy event
-     * @param previousRejections         rejecting shippers from earlier rejection steps, history order
-     * @param previousRejectionSteps     number of earlier rejection steps
+     * @param previousRejections         rejecting shippers from earlier rejection steps, history order;
+     *                                   only these make a rejection a duplicate
+     * @param previouslyExcluded         every shipper recorded as rejecting or timing out, history order
+     * @param previousFailedOffers       earlier rejection plus offer-timeout steps
      */
     public static Decision onRejection(Long rejectedShipperId, List<Long> previousRejections,
-                                       long previousRejectionSteps) {
+                                       List<Long> previouslyExcluded, long previousFailedOffers) {
         if (rejectedShipperId != null && previousRejections.contains(rejectedShipperId)) {
             return new Duplicate();
         }
-        long attempt = previousRejectionSteps + 1;
+        long attempt = previousFailedOffers + 1;
         if (attempt > MAX_FAILED_OFFERS) {
             return new Exhausted();
         }
-        List<Long> excluded = new ArrayList<>();
+        LinkedHashSet<Long> excluded = new LinkedHashSet<>();
         if (rejectedShipperId != null) {
             excluded.add(rejectedShipperId);
         }
-        for (Long previous : previousRejections) {
-            if (!excluded.contains(previous)) {
-                excluded.add(previous);
-            }
-        }
-        return new Rematch(attempt, excluded);
+        excluded.addAll(previouslyExcluded);
+        excluded.addAll(previousRejections);
+        return new Rematch(attempt, new ArrayList<>(excluded));
     }
 
     /**

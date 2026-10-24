@@ -4,6 +4,7 @@ import com.delivery.saga_orchestrator_service.entity.SagaInstance;
 import com.delivery.saga_orchestrator_service.entity.SagaInstance.SagaStatus;
 import com.delivery.saga_orchestrator_service.repository.SagaInstanceRepository;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -19,7 +20,8 @@ import java.util.List;
  * Kịch bản:
  * - Saga ở trạng thái STARTED nhưng không có delivery.created.result sau 2 phút
  * → TIMEOUT
- * - Saga ở trạng thái FINDING_SHIPPER quá 5 phút → TIMEOUT
+ * - Saga ở trạng thái FINDING_SHIPPER quá app.saga.timeout.finding-shipper-minutes
+ *   (mặc định 5 phút, cùng nguồn với matchingDeadlineAt) → TIMEOUT
  * - Saga ở trạng thái SHIPPER_FOUND được kiểm theo deadline trong
  *   chính payload offer (foundAt + waitingTimeoutSeconds)
  */
@@ -30,20 +32,31 @@ public class SagaTimeoutScheduler {
     private final SagaInstanceRepository sagaInstanceRepository;
     private final SagaManager sagaManager;
     private final int batchSize;
+    private final int findingShipperTimeoutMinutes;
 
     // Timeout thresholds (phút)
     private static final int STARTED_TIMEOUT_MINUTES = 2;
     // ✅ Nhà hàng cần thời gian xác nhận đơn → cho ngưỡng dài hơn.
     private static final int RESTAURANT_CONFIRM_TIMEOUT_MINUTES = 10;
-    private static final int FINDING_SHIPPER_TIMEOUT_MINUTES = 5;
+    private static final int DEFAULT_FINDING_SHIPPER_TIMEOUT_MINUTES = 5;
     private static final int MIN_SHIPPER_OFFER_TIMEOUT_SECONDS = 1;
 
     public SagaTimeoutScheduler(SagaInstanceRepository sagaInstanceRepository,
             SagaManager sagaManager,
-            @Value("${app.saga.timeout-batch-size:100}") int batchSize) {
+            int batchSize) {
+        this(sagaInstanceRepository, sagaManager, batchSize, DEFAULT_FINDING_SHIPPER_TIMEOUT_MINUTES);
+    }
+
+    @Autowired
+    public SagaTimeoutScheduler(SagaInstanceRepository sagaInstanceRepository,
+            SagaManager sagaManager,
+            @Value("${app.saga.timeout-batch-size:100}") int batchSize,
+            @Value("${app.saga.timeout.finding-shipper-minutes:5}") int findingShipperTimeoutMinutes) {
         this.sagaInstanceRepository = sagaInstanceRepository;
         this.sagaManager = sagaManager;
         this.batchSize = Math.max(1, Math.min(batchSize, 500));
+        // Same floor as MatchingCommandPolicy.initialDeadline, so both timers agree.
+        this.findingShipperTimeoutMinutes = Math.max(1, findingShipperTimeoutMinutes);
     }
 
     /**
@@ -54,7 +67,7 @@ public class SagaTimeoutScheduler {
         checkStuckSagas(SagaStatus.STARTED, STARTED_TIMEOUT_MINUTES, "Delivery creation timeout");
         // DELIVERY_CREATED = đang chờ nhà hàng confirm (sau khi bật gate confirm).
         checkStuckSagas(SagaStatus.DELIVERY_CREATED, RESTAURANT_CONFIRM_TIMEOUT_MINUTES, "Restaurant confirmation timeout");
-        checkStuckSagas(SagaStatus.FINDING_SHIPPER, FINDING_SHIPPER_TIMEOUT_MINUTES, "Shipper search timeout");
+        checkStuckSagas(SagaStatus.FINDING_SHIPPER, findingShipperTimeoutMinutes, "Shipper search timeout");
         checkShipperOfferTimeouts();
     }
 

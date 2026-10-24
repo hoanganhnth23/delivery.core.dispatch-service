@@ -107,17 +107,39 @@ class DispatchPoliciesTest {
 
     @Test
     void rejectionRematchExcludesCurrentThenPreviousRejectingShippers() {
-        RematchPolicy.Decision decision = RematchPolicy.onRejection(30L, List.of(10L, 20L), 2);
+        RematchPolicy.Decision decision = RematchPolicy.onRejection(30L, List.of(10L, 20L), List.of(10L, 20L), 2);
         RematchPolicy.Rematch rematch = assertInstanceOf(RematchPolicy.Rematch.class, decision);
         assertEquals(3, rematch.attempt());
         assertEquals(List.of(30L, 10L, 20L), rematch.excludedShipperIds());
         assertThrows(UnsupportedOperationException.class, () -> rematch.excludedShipperIds().add(1L));
 
-        assertInstanceOf(RematchPolicy.Duplicate.class, RematchPolicy.onRejection(10L, List.of(10L), 1));
-        assertInstanceOf(RematchPolicy.Exhausted.class, RematchPolicy.onRejection(60L, List.of(), 5));
+        assertInstanceOf(RematchPolicy.Duplicate.class,
+                RematchPolicy.onRejection(10L, List.of(10L), List.of(10L), 1));
+        assertInstanceOf(RematchPolicy.Exhausted.class, RematchPolicy.onRejection(60L, List.of(), List.of(), 5));
         RematchPolicy.Rematch legacy = assertInstanceOf(RematchPolicy.Rematch.class,
-                RematchPolicy.onRejection(null, List.of(10L, 10L), 1));
+                RematchPolicy.onRejection(null, List.of(10L, 10L), List.of(10L, 10L), 1));
         assertEquals(List.of(10L), legacy.excludedShipperIds());
+    }
+
+    @Test
+    void rejectionRematchAlsoExcludesShippersWhoLetAnOfferExpire() {
+        // 40 let an earlier offer time out; a later rejection by 30 must not re-offer 40.
+        RematchPolicy.Rematch rematch = assertInstanceOf(RematchPolicy.Rematch.class,
+                RematchPolicy.onRejection(30L, List.of(10L), List.of(10L, 40L), 2));
+        assertEquals(3, rematch.attempt());
+        assertEquals(List.of(30L, 10L, 40L), rematch.excludedShipperIds());
+        // A timed-out shipper is not a rejecting shipper, so its rejection is not a duplicate.
+        assertInstanceOf(RematchPolicy.Rematch.class,
+                RematchPolicy.onRejection(40L, List.of(10L), List.of(10L, 40L), 2));
+    }
+
+    @Test
+    void rejectionSharesTheFailedOfferLimitWithOfferTimeouts() {
+        // Four timeouts and no rejection yet: one more failed offer is the fifth, the next exhausts.
+        assertInstanceOf(RematchPolicy.Rematch.class,
+                RematchPolicy.onRejection(50L, List.of(), List.of(1L, 2L, 3L, 4L), 4));
+        assertInstanceOf(RematchPolicy.Exhausted.class,
+                RematchPolicy.onRejection(60L, List.of(50L), List.of(1L, 2L, 3L, 4L, 50L), 5));
     }
 
     @Test

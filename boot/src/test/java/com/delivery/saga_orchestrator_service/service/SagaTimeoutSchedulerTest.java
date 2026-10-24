@@ -72,6 +72,30 @@ class SagaTimeoutSchedulerTest {
         });
     }
 
+    @Test
+    void findingShipperTimeoutFollowsConfiguredMinutesInsteadOfFixedFive() {
+        SagaInstanceRepository repository = mock(SagaInstanceRepository.class);
+        SagaManager manager = mock(SagaManager.class);
+        SagaInstance stuck = stuckSaga(4L, 44L, SagaInstance.SagaStatus.FINDING_SHIPPER);
+        stuck.setUpdatedAt(LocalDateTime.now().minusMinutes(7));
+        when(repository.findStuckSagas(eq(SagaInstance.SagaStatus.FINDING_SHIPPER),
+                any(LocalDateTime.class), any(Pageable.class)))
+                .thenReturn(List.of(stuck));
+        SagaTimeoutScheduler scheduler = new SagaTimeoutScheduler(repository, manager, 25, 10);
+        LocalDateTime beforePoll = LocalDateTime.now();
+
+        scheduler.checkTimeouts();
+
+        ArgumentCaptor<LocalDateTime> cutoff = ArgumentCaptor.forClass(LocalDateTime.class);
+        verify(repository).findStuckSagas(eq(SagaInstance.SagaStatus.FINDING_SHIPPER),
+                cutoff.capture(), any(Pageable.class));
+        assertThat(cutoff.getValue()).isBefore(beforePoll.minusMinutes(9));
+        ArgumentCaptor<SagaTimeoutCommand> timeout = ArgumentCaptor.forClass(SagaTimeoutCommand.class);
+        verify(manager).handleTimeout(timeout.capture());
+        // Deadline = observed update + configured 10 minutes, so a 7-minute-old search is not yet due.
+        assertThat(timeout.getValue().deadline()).isAfter(LocalDateTime.now().plusMinutes(2));
+    }
+
     private SagaInstance stuckSaga(Long orderId, Long deliveryId, SagaInstance.SagaStatus status) {
         SagaInstance saga = new SagaInstance();
         saga.setOrderId(orderId);

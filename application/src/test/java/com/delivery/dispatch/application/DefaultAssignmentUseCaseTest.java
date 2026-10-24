@@ -77,6 +77,23 @@ class DefaultAssignmentUseCaseTest {
     }
 
     @Test
+    void rejectionAfterOfferTimeoutsExcludesTimedOutShippersAndSharesTheLimit() {
+        FakeCase c = new FakeCase(DispatchStatus.SHIPPER_FOUND, "SHIPPER_OFFER_TIMEOUT_1", "4");
+        assertEquals(RejectionOutcome.REMATCHED, useCase.onRejected(c, 9L, "r"));
+        assertTrue(c.history().has("SHIPPER_REJECTED_2"));
+        assertEquals(List.of("save:FINDING_SHIPPER", "rematch:[9, 4]", "save:FINDING_SHIPPER",
+                "order:FINDING_SHIPPER"), calls);
+
+        calls.clear();
+        FakeCase exhausted = new FakeCase(DispatchStatus.SHIPPER_FOUND,
+                "SHIPPER_OFFER_TIMEOUT_1", "1", "SHIPPER_OFFER_TIMEOUT_2", "2", "SHIPPER_OFFER_TIMEOUT_3", "3",
+                "SHIPPER_OFFER_TIMEOUT_4", "4", "SHIPPER_REJECTED_5", "5");
+        assertEquals(RejectionOutcome.EXHAUSTED, useCase.onRejected(exhausted, 6L, "r"));
+        assertEquals(DispatchStatus.FAILED, exhausted.status);
+        assertEquals(List.of("save:FAILED", "notFound:r", "order:SHIPPER_NOT_FOUND"), calls);
+    }
+
+    @Test
     void rejectionOutsideAwaitingStatesIsIgnoredAndMismatchFails() {
         assertEquals(RejectionOutcome.IGNORED_STATE,
                 useCase.onRejected(new FakeCase(DispatchStatus.PICKING_UP), 9L, "r"));

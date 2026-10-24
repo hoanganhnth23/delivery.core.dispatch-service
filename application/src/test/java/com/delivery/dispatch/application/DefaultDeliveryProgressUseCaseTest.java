@@ -71,7 +71,14 @@ class DefaultDeliveryProgressUseCaseTest {
                     for (String[] s : steps) if (s[0].startsWith("SHIPPER_REJECTED") && s[1] != null) ids.add(Long.valueOf(s[1]));
                     return ids;
                 }
-                @Override public List<Long> recordedRejectedShippers() { throw new UnsupportedOperationException(); }
+                @Override public List<Long> recordedRejectedShippers() {
+                    List<Long> ids = new ArrayList<>();
+                    for (String[] s : steps) {
+                        if ((s[0].startsWith("SHIPPER_REJECTED") || s[0].startsWith("SHIPPER_OFFER_TIMEOUT"))
+                                && s[1] != null) ids.add(Long.valueOf(s[1]));
+                    }
+                    return ids;
+                }
                 @Override public UUID currentMatchingSession() {
                     String data = latest("MATCHING_STARTED");
                     return data == null ? null : UUID.fromString(data);
