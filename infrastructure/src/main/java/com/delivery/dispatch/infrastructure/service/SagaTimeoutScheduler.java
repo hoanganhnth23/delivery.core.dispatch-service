@@ -21,7 +21,7 @@ import java.util.List;
  * - Saga ở trạng thái STARTED nhưng không có delivery.created.result sau 2 phút
  * → TIMEOUT
  * - Saga ở trạng thái FINDING_SHIPPER quá app.saga.timeout.finding-shipper-minutes
- *   (mặc định 5 phút, cùng nguồn với matchingDeadlineAt) → TIMEOUT
+ *   (mặc định 15 phút, cùng nguồn với matchingDeadlineAt) → TIMEOUT
  * - Saga ở trạng thái SHIPPER_FOUND được kiểm theo deadline trong
  *   chính payload offer (foundAt + waitingTimeoutSeconds)
  */
@@ -38,7 +38,7 @@ public class SagaTimeoutScheduler {
     private static final int STARTED_TIMEOUT_MINUTES = 2;
     // ✅ Nhà hàng cần thời gian xác nhận đơn → cho ngưỡng dài hơn.
     private static final int RESTAURANT_CONFIRM_TIMEOUT_MINUTES = 10;
-    private static final int DEFAULT_FINDING_SHIPPER_TIMEOUT_MINUTES = 5;
+    private static final int DEFAULT_FINDING_SHIPPER_TIMEOUT_MINUTES = 15;
     private static final int MIN_SHIPPER_OFFER_TIMEOUT_SECONDS = 1;
 
     public SagaTimeoutScheduler(SagaInstanceRepository sagaInstanceRepository,
@@ -51,7 +51,7 @@ public class SagaTimeoutScheduler {
     public SagaTimeoutScheduler(SagaInstanceRepository sagaInstanceRepository,
             DispatchCoordinator dispatchCoordinator,
             @Value("${app.saga.timeout-batch-size:100}") int batchSize,
-            @Value("${app.saga.timeout.finding-shipper-minutes:5}") int findingShipperTimeoutMinutes) {
+            @Value("${app.saga.timeout.finding-shipper-minutes:15}") int findingShipperTimeoutMinutes) {
         this.sagaInstanceRepository = sagaInstanceRepository;
         this.dispatchCoordinator = dispatchCoordinator;
         this.batchSize = Math.max(1, Math.min(batchSize, 500));

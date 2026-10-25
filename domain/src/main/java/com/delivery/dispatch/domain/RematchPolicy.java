@@ -12,8 +12,12 @@ import java.util.List;
  */
 public final class RematchPolicy {
 
-    /** Shared bound on failed offers before the case compensates as SHIPPER_NOT_FOUND. */
-    public static final int MAX_FAILED_OFFERS = 5;
+    /**
+     * Default shared bound on failed offers before the case compensates as
+     * SHIPPER_NOT_FOUND (app.dispatch.max-failed-offers). Offers are short, so the
+     * case keeps offering the next nearest shipper until this or the search deadline.
+     */
+    public static final int DEFAULT_MAX_FAILED_OFFERS = 20;
 
     private RematchPolicy() {
     }
@@ -45,14 +49,16 @@ public final class RematchPolicy {
      *                                   only these make a rejection a duplicate
      * @param previouslyExcluded         every shipper recorded as rejecting or timing out, history order
      * @param previousFailedOffers       earlier rejection plus offer-timeout steps
+     * @param maxFailedOffers            failed-offer budget of the case
      */
     public static Decision onRejection(Long rejectedShipperId, List<Long> previousRejections,
-                                       List<Long> previouslyExcluded, long previousFailedOffers) {
+                                       List<Long> previouslyExcluded, long previousFailedOffers,
+                                       int maxFailedOffers) {
         if (rejectedShipperId != null && previousRejections.contains(rejectedShipperId)) {
             return new Duplicate();
         }
         long attempt = previousFailedOffers + 1;
-        if (attempt > MAX_FAILED_OFFERS) {
+        if (attempt > maxFailedOffers) {
             return new Exhausted();
         }
         LinkedHashSet<Long> excluded = new LinkedHashSet<>();
@@ -68,13 +74,14 @@ public final class RematchPolicy {
      * @param timedOutShipperId      positive shipper of the expired offer
      * @param recordedRejectedIds    every rejectedShipperId recorded in history, history order
      * @param previousFailedOffers   earlier rejection plus offer-timeout steps
+     * @param maxFailedOffers        failed-offer budget of the case
      */
     public static Decision onOfferTimeout(long timedOutShipperId, List<Long> recordedRejectedIds,
-                                          long previousFailedOffers) {
+                                          long previousFailedOffers, int maxFailedOffers) {
         if (timedOutShipperId <= 0) {
             throw new IllegalStateException("Offer payload shipperId must be positive");
         }
-        if (previousFailedOffers >= MAX_FAILED_OFFERS) {
+        if (previousFailedOffers >= maxFailedOffers) {
             return new Exhausted();
         }
         LinkedHashSet<Long> excluded = new LinkedHashSet<>(recordedRejectedIds);

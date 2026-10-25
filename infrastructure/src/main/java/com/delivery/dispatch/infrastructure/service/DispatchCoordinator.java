@@ -1,5 +1,6 @@
 package com.delivery.dispatch.infrastructure.service;
 
+import com.delivery.dispatch.domain.RematchPolicy;
 import com.delivery.dispatch.domain.MatchingRetrySettings;
 import com.delivery.dispatch.domain.OfferRetirementPolicy;
 import com.delivery.dispatch.infrastructure.entity.SagaInstance;
@@ -85,8 +86,10 @@ public class DispatchCoordinator {
     private int initialMatchMaxDelaySeconds = 300;
     @Value("${matching.initial.backoff-multiplier:1.5}")
     private double initialMatchBackoffMultiplier = 1.5;
-    @Value("${app.saga.timeout.finding-shipper-minutes:5}")
-    private int findingShipperTimeoutMinutes = 5;
+    @Value("${app.saga.timeout.finding-shipper-minutes:15}")
+    private int findingShipperTimeoutMinutes = 15;
+    @Value("${app.dispatch.max-failed-offers:" + RematchPolicy.DEFAULT_MAX_FAILED_OFFERS + "}")
+    private int maxFailedOffers = RematchPolicy.DEFAULT_MAX_FAILED_OFFERS;
     @Value("${matching.batch.client-capability-enabled:false}")
     private boolean batchClientCapabilityEnabled;
     @Value("${spring.datasource.url:}")
@@ -106,12 +109,12 @@ public class DispatchCoordinator {
                 () -> updateOrderStatusTopic);
         this.matching = new MatchingCommands(objectMapper, outbox, () -> batchClientCapabilityEnabled);
         this.offerExpiry = new OfferExpiry(objectMapper, outbox, matching, sagaInstanceRepository::save,
-                this::handleStepFailedLocked);
+                this::handleStepFailedLocked, () -> maxFailedOffers);
         this.useCases = new DispatchUseCases(sagaInstanceRepository::save, this::findSagaByOrderId,
                 objectMapper, outbox, matching, this::sameJson,
                 () -> new MatchingRetrySettings(initialMatchMaxRetryAttempts, initialMatchDelaySeconds,
                         initialMatchMaxDelaySeconds, initialMatchBackoffMultiplier),
-                () -> findingShipperTimeoutMinutes);
+                () -> findingShipperTimeoutMinutes, () -> maxFailedOffers);
     }
 
     /** Compatibility constructor for tests that exercise the durable inbox but not early-event staging. */

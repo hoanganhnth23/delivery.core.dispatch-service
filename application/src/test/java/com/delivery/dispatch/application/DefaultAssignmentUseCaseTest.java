@@ -25,7 +25,8 @@ class DefaultAssignmentUseCaseTest {
             c -> calls.add("save:" + c.status()),
             (c, cause, excluded) -> calls.add("rematch:" + excluded),
             offers,
-            (c, status, cause) -> calls.add("order:" + status));
+            (c, status, cause) -> calls.add("order:" + status),
+            5);   // small budget keeps the exhaustion cases short
 
     @Test
     void acceptanceAssignsWhileAwaitingAndForwardsToOrder() {
@@ -113,5 +114,7 @@ class DefaultAssignmentUseCaseTest {
                 () -> new DefaultAssignmentUseCase(c -> { }, (c, e, x) -> { }, null, (c, s, e) -> { }));
         assertThrows(NullPointerException.class,
                 () -> new DefaultAssignmentUseCase(c -> { }, (c, e, x) -> { }, offers, null));
+        assertThrows(IllegalArgumentException.class,
+                () -> new DefaultAssignmentUseCase(c -> { }, (c, e, x) -> { }, offers, (c, s, e) -> { }, 0));
     }
 }

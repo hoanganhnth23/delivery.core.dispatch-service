@@ -37,14 +37,17 @@ final class OfferExpiry {
     private final MatchingCommands matching;
     private final Consumer<SagaInstance> store;
     private final StepFailure stepFailure;
+    private final java.util.function.IntSupplier maxFailedOffers;
 
     OfferExpiry(ObjectMapper objectMapper, DispatchCommandOutbox outbox, MatchingCommands matching,
-                Consumer<SagaInstance> store, StepFailure stepFailure) {
+                Consumer<SagaInstance> store, StepFailure stepFailure,
+                java.util.function.IntSupplier maxFailedOffers) {
         this.objectMapper = objectMapper;
         this.outbox = outbox;
         this.matching = matching;
         this.store = store;
         this.stepFailure = stepFailure;
+        this.maxFailedOffers = maxFailedOffers;
     }
 
     /** A timeout observation applies only to the exact status, version and update it was taken from. */
@@ -105,7 +108,7 @@ final class OfferExpiry {
                 + history.countWithPrefix("SHIPPER_OFFER_TIMEOUT");
         // The shared limit is checked before parsing so an exhausted case with a
         // malformed offer still compensates as exhausted.
-        if (previousFailedOffers >= RematchPolicy.MAX_FAILED_OFFERS) {
+        if (previousFailedOffers >= maxFailedOffers.getAsInt()) {
             stepFailure.fail("SHIPPER_OFFER_TIMEOUT_LIMIT", saga,
                     "Shipper offer attempts exhausted", rawTimeoutEvent);
             return;
@@ -140,7 +143,8 @@ final class OfferExpiry {
             }
 
             RematchPolicy.Rematch rematch = (RematchPolicy.Rematch) RematchPolicy.onOfferTimeout(
-                    timedOutShipperId, history.recordedRejectedShippers(), previousFailedOffers);
+                    timedOutShipperId, history.recordedRejectedShippers(), previousFailedOffers,
+                    maxFailedOffers.getAsInt());
             payload.put("rejectedShipperId", timedOutShipperId);
 
             var excludedArray = objectMapper.createArrayNode();

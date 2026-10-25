@@ -136,7 +136,7 @@ class SagaTimeoutPostgresConcurrencyTest {
         saga.setDeliveryId(940012L);
         saga.setStatus(SagaInstance.SagaStatus.FINDING_SHIPPER);
         saga.setPayload("{\"orderId\":940011,\"totalPrice\":120000,\"paymentMethod\":\"COD\"}");
-        LocalDateTime overdue = LocalDateTime.now().minusMinutes(6);
+        LocalDateTime overdue = LocalDateTime.now().minusMinutes(16); // past the 15-minute search deadline
         saga.setCreatedAt(overdue);
         saga.setUpdatedAt(overdue);
         saga = sagaRepository.saveAndFlush(saga);
