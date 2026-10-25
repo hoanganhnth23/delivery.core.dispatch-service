@@ -25,13 +25,21 @@ public final class DefaultAssignmentUseCase implements AssignmentUseCase {
     private final RematchCommands rematch;
     private final OfferCommands offers;
     private final DispatchCommands commands;
+    private final int maxFailedOffers;
 
     public DefaultAssignmentUseCase(DispatchCaseStore store, RematchCommands rematch, OfferCommands offers,
                                     DispatchCommands commands) {
+        this(store, rematch, offers, commands, RematchPolicy.DEFAULT_MAX_FAILED_OFFERS);
+    }
+
+    public DefaultAssignmentUseCase(DispatchCaseStore store, RematchCommands rematch, OfferCommands offers,
+                                    DispatchCommands commands, int maxFailedOffers) {
         this.store = Objects.requireNonNull(store, "store");
         this.rematch = Objects.requireNonNull(rematch, "rematch");
         this.offers = Objects.requireNonNull(offers, "offers");
         this.commands = Objects.requireNonNull(commands, "commands");
+        if (maxFailedOffers < 1) throw new IllegalArgumentException("maxFailedOffers must be positive");
+        this.maxFailedOffers = maxFailedOffers;
     }
 
     @Override
@@ -73,7 +81,8 @@ public final class DefaultAssignmentUseCase implements AssignmentUseCase {
         long previousFailedOffers = history.countWithPrefix("SHIPPER_REJECTED")
                 + history.countWithPrefix("SHIPPER_OFFER_TIMEOUT");
         RematchPolicy.Decision decision = RematchPolicy.onRejection(rejectedShipperId,
-                history.rejectingShippers(), history.recordedRejectedShippers(), previousFailedOffers);
+                history.rejectingShippers(), history.recordedRejectedShippers(), previousFailedOffers,
+                maxFailedOffers);
         if (decision instanceof RematchPolicy.Duplicate) {
             return RejectionOutcome.DUPLICATE;
         }

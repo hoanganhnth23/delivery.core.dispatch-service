@@ -49,11 +49,12 @@ final class DispatchUseCases {
     private final BiPredicate<String, String> sameJson;
     private final Supplier<MatchingRetrySettings> initialRetrySettings;
     private final IntSupplier findingShipperTimeoutMinutes;
+    private final IntSupplier maxFailedOffers;
 
     DispatchUseCases(Consumer<SagaInstance> store, Function<Long, SagaInstance> lockCase,
                      ObjectMapper objectMapper, DispatchCommandOutbox outbox, MatchingCommands matching,
                      BiPredicate<String, String> sameJson, Supplier<MatchingRetrySettings> initialRetrySettings,
-                     IntSupplier findingShipperTimeoutMinutes) {
+                     IntSupplier findingShipperTimeoutMinutes, IntSupplier maxFailedOffers) {
         this.store = store;
         this.lockCase = lockCase;
         this.objectMapper = objectMapper;
@@ -62,6 +63,7 @@ final class DispatchUseCases {
         this.sameJson = sameJson;
         this.initialRetrySettings = initialRetrySettings;
         this.findingShipperTimeoutMinutes = findingShipperTimeoutMinutes;
+        this.maxFailedOffers = maxFailedOffers;
     }
 
     DeliveryCreationUseCase deliveryCreation() {
@@ -99,7 +101,8 @@ final class DispatchUseCases {
                 dispatchCase -> store.accept(saga(dispatchCase)),
                 (dispatchCase, cause, excluded) -> rematchAfterRejection(saga(dispatchCase), cause, excluded),
                 offerCommands(),
-                (dispatchCase, status, cause) -> outbox.orderStatus(saga(dispatchCase), status, cause));
+                (dispatchCase, status, cause) -> outbox.orderStatus(saga(dispatchCase), status, cause),
+                maxFailedOffers.getAsInt());
     }
 
     DeliveryProgressUseCase deliveryProgress() {
