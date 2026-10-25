@@ -10,10 +10,10 @@
         <relativePath>../../platform/delivery-build-parent/pom.xml</relativePath>
     </parent>
     <groupId>com.delivery</groupId>
-    <artifactId>match-domain</artifactId>
+    <artifactId>dispatch-domain</artifactId>
     <version>1.0.0-SNAPSHOT</version>
-    <name>match-domain</name>
-    <description>Framework-independent matching value objects.</description>
+    <name>dispatch-domain</name>
+    <description>Framework-independent delivery-coordination (dispatch) state machine and policies.</description>
     <properties>
         <delivery.coverage.line.minimum>0.85</delivery.coverage.line.minimum>
         <delivery.coverage.branch.minimum>0.85</delivery.coverage.branch.minimum>
