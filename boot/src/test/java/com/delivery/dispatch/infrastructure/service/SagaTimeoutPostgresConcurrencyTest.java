@@ -94,6 +94,9 @@ class SagaTimeoutPostgresConcurrencyTest {
         saga.setStatus(SagaInstance.SagaStatus.FINDING_SHIPPER);
         saga.setPayload("{\"orderId\":940001,\"totalPrice\":120000,\"paymentMethod\":\"COD\"}");
         saga = sagaRepository.saveAndFlush(saga);
+        // Observe the row as the scheduler does: Postgres keeps microseconds, while the
+        // in-memory updatedAt may carry nanoseconds (Linux) and would never match the fence.
+        saga = sagaRepository.findById(saga.getId()).orElseThrow();
         SagaTimeoutCommand timeout = SagaTimeoutCommand.forStage(
                 saga, SagaInstance.SagaStatus.FINDING_SHIPPER, Duration.ZERO, "matching timeout");
 
